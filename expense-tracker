@@ -8,9 +8,7 @@ import argparse
 import tempfile
 import shutil
 
-
 CSV_PATH = "expense_tracker.csv"
-
 
 def get_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -71,9 +69,8 @@ def append_row(id:int,now:str,desc:str,amount:int):
 
 def list_expense() -> None:
     data = load_csv()
-
     print(data)
-    #print("list expense")
+    print("list expense successfully")
 
 def update_expense() -> None:
     print("update_expense")
@@ -82,6 +79,18 @@ def delete_expense() -> None:
     print("delete_expense")
 
 def summary_expense() -> None:
+
+    total_sum = 0 
+
+    data = load_csv()
+    with open(CSV_PATH, 'r', newline='') as file:
+        reader = csv.reader(file)
+        next(reader)
+        
+        for row in reader :
+            total_sum += int(row[3])
+    
+    print(f"Total expenses: ${total_sum}")
     print("summary_expense")
 
 def add_expense(desc,amount) -> None:
@@ -90,6 +99,7 @@ def add_expense(desc,amount) -> None:
     id = genrate_id(data)
     now = get_now_iso()
     append_row(id,now,desc,amount)
+    data = load_csv()
     print(data)
     print("Data added scussfully")
 
