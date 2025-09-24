@@ -5,9 +5,75 @@ import sys
 from datetime import datetime, timezone
 import csv 
 import argparse
+import tempfile
+import shutil
+
+
+CSV_PATH = "expense_tracker.csv"
+
+
+def get_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+def create_csv()->None: 
+    fields = ["ID", "Date","Description","Amount"]
+    with open(CSV_PATH, 'w') as csvfile:
+        csvwriter = csv.writer(csvfile) 
+        csvwriter.writerow(fields)
+
+def load_csv() -> None:
+    if not os.path.exists(CSV_PATH):
+        create_csv()
+
+    with open(CSV_PATH, mode='r') as file:
+        csv_reader = csv.reader(file)  
+
+        data_list = []  
+        for row in csv_reader:
+            data_list.append(row)
+        
+        return data_list    
+
+def genrate_id(data:list) -> int :
+    with open(CSV_PATH, 'r', newline='') as file:
+        reader = csv.reader(file)
+        row_count = sum(1 for row in reader)
+    return row_count
+
+def update_by_id(id:int,now:str,desc:str,amount:int):
+
+    temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, newline='')
+    updated = False
+
+    with open(CSV_PATH, 'r', newline='') as infile, temp_file:
+        reader = csv.reader(infile)
+        fieldnames = reader.fieldnames
+        writer = csv.reader(temp_file, fieldnames=fieldnames)
+
+        writer.writeheader()  # Write the header to the new file
+
+        for row in reader:
+            if row['ID'] == id:
+                # Update the row with new_data
+                row.update(["lets see"])
+                updated = True
+            writer.writerow(row)
+
+    # Replace the original file with the updated temporary file
+    shutil.move(temp_file.name, filename)
+    
+def append_row(id:int,now:str,desc:str,amount:int):
+    new_row_data = [id , now , desc,amount]
+    with open(CSV_PATH ,'a', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerow(new_row_data)
+
 
 def list_expense() -> None:
-    print("list expense")
+    data = load_csv()
+
+    print(data)
+    #print("list expense")
 
 def update_expense() -> None:
     print("update_expense")
@@ -19,8 +85,13 @@ def summary_expense() -> None:
     print("summary_expense")
 
 def add_expense(desc,amount) -> None:
-    print(desc)
-    print(amount)
+    
+    data = load_csv()
+    id = genrate_id(data)
+    now = get_now_iso()
+    append_row(id,now,desc,amount)
+    print(data)
+    print("Data added scussfully")
 
 parser = argparse.ArgumentParser(description='expense tracking')
 
@@ -45,8 +116,12 @@ summary_parser.set_defaults(func=summary_expense)
 
 args = parser.parse_args()   
 
-if hasattr(args, 'func'):
 
+if args.operation is None:
+    parser.print_help()
+
+if hasattr(args, 'func'):
+    
     if args.operation == "add_expense":
         args.func(args.description, args.amount)
     if args.operation == "list_expense":
