@@ -78,20 +78,40 @@ def update_expense() -> None:
 def delete_expense() -> None:
     print("delete_expense")
 
-def summary_expense() -> None:
-
-    total_sum = 0 
-
-    data = load_csv()
-    with open(CSV_PATH, 'r', newline='') as file:
-        reader = csv.reader(file)
-        next(reader)
+def summary_expense(month=None) -> None:
+    if month:
+        if month < 0 or month > 12:
+            print("invalid month")
         
-        for row in reader :
-            total_sum += int(row[3])
+        total_sum = 0
+
+        with open(CSV_PATH, 'r', newline='') as file:
+            reader = csv.reader(file)
+            next(reader)  
+
+            for row in reader:
+                try:
+                    expense_date = datetime.fromisoformat(row[1])
+                    if expense_date.month == month:
+                        total_sum += int(row[3])
+                except (ValueError, IndexError):
+                    continue  
+
+        print(f"Total expenses for month {month}: ₹{total_sum}")
+
+    else:
+        total_sum = 0 
+
+        data = load_csv()
+        with open(CSV_PATH, 'r', newline='') as file:
+            reader = csv.reader(file)
+            next(reader)
+        
+            for row in reader :
+                total_sum += int(row[3])
     
-    print(f"Total expenses: ${total_sum}")
-    print("summary_expense")
+        print(f"Total expenses:  ₹{total_sum}")
+        print("summary_expense")
 
 def add_expense(desc,amount) -> None:
     
@@ -122,6 +142,7 @@ update_parser = subparsers.add_parser("update_expense", help="update expense in 
 update_parser.set_defaults(func=update_expense)
 
 summary_parser = subparsers.add_parser("summary_expense", help="summary expense in the sheet")
+summary_parser.add_argument("--month", type=int)
 summary_parser.set_defaults(func=summary_expense)
 
 args = parser.parse_args()   
@@ -141,4 +162,4 @@ if hasattr(args, 'func'):
     if args.operation == "update_expense":
         args.func()
     if args.operation == "summary_expense":
-        args.func()
+        args.func(args.month)
