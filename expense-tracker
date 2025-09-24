@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os 
-#import sys
 from datetime import datetime, timezone
 import csv 
 import argparse
@@ -68,15 +67,11 @@ def update_expense(id:int,amount:int) -> None:
 
         for row in reader:
             if int(row[0]) == id:
-                # Update the row with new_data
                 row[3] = str(amount)
             writer.writerow(row)
 
-    # Replace the original file with the updated temporary file
     shutil.move(temp_file.name, CSV_PATH)
-    data = load_csv()
-    print(data)
-    print("update_expense")
+    print("update_expense successfully")
 
 def delete_expense(id:int) -> None:
 
@@ -84,7 +79,6 @@ def delete_expense(id:int) -> None:
 
     with open(CSV_PATH, 'r', newline='') as infile, temp_file:
         reader = csv.reader(infile)
-        #fieldnames = reader.fieldnames
         header = next(reader)
         writer = csv.writer(temp_file)
         writer.writerow(header)
@@ -95,9 +89,7 @@ def delete_expense(id:int) -> None:
             writer.writerow(row)
 
     shutil.move(temp_file.name, CSV_PATH)
-    data = load_csv()
-    print(data)
-    print("delete_expense")
+    print("delete_expense successfully")
 
 def summary_expense(month=None) -> None:
     if month:
@@ -132,7 +124,6 @@ def summary_expense(month=None) -> None:
                 total_sum += int(row[3])
     
         print(f"Total expenses:  ₹{total_sum}")
-        print("summary_expense")
 
 def add_expense(desc,amount) -> None:
     
@@ -144,7 +135,7 @@ def add_expense(desc,amount) -> None:
         csv_writer.writerow(new_row_data)
     data = load_csv()
     print(data)
-    print("Data added scussfully")
+    print("Data added successfully")
 
 parser = argparse.ArgumentParser(description='expense tracking')
 
