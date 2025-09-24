@@ -33,13 +33,30 @@ def load_csv() -> None:
         return data_list    
 
 def genrate_id(data:list) -> int :
+
+    existing_ids = set()
+
     with open(CSV_PATH, 'r', newline='') as file:
         reader = csv.reader(file)
-        row_count = sum(1 for row in reader)
-    return row_count
+        next(reader)  
+        for row in reader:
+            try:
+                existing_ids.add(int(row[0]))  
+            except (ValueError, IndexError):
+                continue
 
-def update_by_id(id:int,now:str,desc:str,amount:int):
+    new_id = 1
+    while new_id in existing_ids:
+        new_id += 1
 
+    return new_id
+
+def list_expense() -> None:
+    data = load_csv()
+    print(data)
+    print("list expense successfully")
+
+def update_expense(id:int,amount:int) -> None:
     temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, newline='')
     updated = False
 
@@ -59,23 +76,28 @@ def update_by_id(id:int,now:str,desc:str,amount:int):
 
     # Replace the original file with the updated temporary file
     shutil.move(temp_file.name, filename)
-    
-def append_row(id:int,now:str,desc:str,amount:int):
-    new_row_data = [id , now , desc,amount]
-    with open(CSV_PATH ,'a', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(new_row_data)
 
-
-def list_expense() -> None:
-    data = load_csv()
-    print(data)
-    print("list expense successfully")
-
-def update_expense() -> None:
     print("update_expense")
 
-def delete_expense() -> None:
+def delete_expense(id:int) -> None:
+
+    temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, newline='')
+
+    with open(CSV_PATH, 'r', newline='') as infile, temp_file:
+        reader = csv.reader(infile)
+        #fieldnames = reader.fieldnames
+        header = next(reader)
+        writer = csv.writer(temp_file)
+        writer.writerow(header)
+
+        for row in reader:
+            if int(row[0]) == id:
+                continue
+            writer.writerow(row)
+
+    shutil.move(temp_file.name, CSV_PATH)
+    data = load_csv()
+    print(data)
     print("delete_expense")
 
 def summary_expense(month=None) -> None:
@@ -118,7 +140,10 @@ def add_expense(desc,amount) -> None:
     data = load_csv()
     id = genrate_id(data)
     now = get_now_iso()
-    append_row(id,now,desc,amount)
+    new_row_data = [id , now , desc,amount]
+    with open(CSV_PATH ,'a', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerow(new_row_data)
     data = load_csv()
     print(data)
     print("Data added scussfully")
@@ -136,9 +161,12 @@ list_parser = subparsers.add_parser("list_expense", help="list expense in the sh
 list_parser.set_defaults(func=list_expense)
 
 delete_parser = subparsers.add_parser("delete_expense", help="delete expense in the sheet")
+delete_parser.add_argument("--id",type=int)
 delete_parser.set_defaults(func=delete_expense)
 
 update_parser = subparsers.add_parser("update_expense", help="update expense in the sheet")
+update_parser.add_argument("--id",type=int)
+update_parser.add_argument("--amount",type=int)
 update_parser.set_defaults(func=update_expense)
 
 summary_parser = subparsers.add_parser("summary_expense", help="summary expense in the sheet")
@@ -158,8 +186,8 @@ if hasattr(args, 'func'):
     if args.operation == "list_expense":
         args.func()
     if args.operation == "delete_expense":
-        args.func()
+        args.func(args.id)
     if args.operation == "update_expense":
-        args.func()
+        args.func(args.id,args.amount)
     if args.operation == "summary_expense":
         args.func(args.month)
